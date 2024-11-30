@@ -1,0 +1,62 @@
+\input{preamble}
+\input{format}
+\input{commands}
+
+\begin{document}
+
+\begin{Large}
+    \textsf{\textbf{Stochastic Linear Bandits}}
+    An Empirical Study
+\end{Large}
+
+\vspace{1ex}
+
+\textsf{\textbf{Students:}} \text{Your names}, \\
+\textsf{\textbf{Lecturer:}} \text{Claire Vernade}, Contact me on Slack if anything looks weird, or find my email on my \href{www.cvernade.com}{website} 
+
+
+\vspace{2ex}
+
+Stochastic Linear Bandits are a great way to model contextual sequential decision making problems. We saw them in class and you can read further in the Bandit book \citep{lattimore2020bandit}. In this assignment, your task will be to implement them in order to discuss concretely their performance on simulated environments. The `companion' notebook is attached in this Overleaf. it contains a boiler plate for the experiments and the main questions you will need to answer below. On my website you can find a sample notebook for K-armed bandits (not linear) that may help you get started. 
+
+\textbf{Hard constraint:} Your report can be at most 3 pages + a possible appendix if you decide to also address the Bonus part at the end of the notebook. Thus, if you need to include code snippets or figures, you will have to carefully choose which ones. You are welcome to (and you should!) delete anything I wrote here and below, as long as you re-introduce enough context for your answers, plots and discussions. The clarity of your presentation will be taken into account in the evaluation. Each additional page ($>3$ for the main part, appendix and references do not count) will count -1 on your grade. 
+
+\begin{problem}{Linear Epsilon Greedy (/5)}{}
+\begin{itemize}
+    \item Complete the implementation of the Linear Bandit environment and the action generation function;
+    \item Implement Linear Epsilon Greedy and test it on a simple problem of your choice. Describe your chosen benchmark, report your results and comment. Is it a strong baseline? 
+    \item Discuss the complexity of the matrix inversion step and propose a better, incremental update. Report the gain in runtimes that you observed as a function of $d$.
+\end{itemize}
+\end{problem}
+
+\begin{problem}{LinUCB and LinTS (/5)}{}
+\begin{itemize}
+    \item Implement LinUCB and LinTS. 
+    \item For Thompson Sampling, what is the posterior at time $t$?
+    \item We want to know if there is a better algorithm out of all the ones you implemented. Propose an experiment (describe it) and report your results and conclusions.
+\end{itemize}
+\end{problem}
+
+
+
+% =================================================
+
+% \newpage
+
+% \vfill
+%%% Reminder: Maximum 3 pages
+\newpage
+
+\bibliographystyle{apalike}
+\bibliography{references}
+
+
+\appendix
+
+\section{Bonus section: The role of the action set}
+
+This last part allows you to study how certain actions sets can be hard for LinUCB. I propose some code to highlight this phenomenon, that was unveiled by \citet{lattimore2017end}. 
+Follow the instructions in the notebook and report your results and comments here. 
+\emph{This part can count up to (+2) points, meaning that the maximal grade is (12/10) and could compensate missed points on the Quiz or on the project. }
+
+\end{document}
