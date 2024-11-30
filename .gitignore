@@ -3,5 +3,7 @@
 *.log
 *.out
 *.synctex.gz
+*.bbl
+*.blg
 
 !main.tex
