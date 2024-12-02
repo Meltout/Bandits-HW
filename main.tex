@@ -37,6 +37,38 @@ Stochastic Linear Bandits are a great way to model contextual sequential decisio
 \end{itemize}
 \end{problem}
 
+\section{Linear Epsilon Greedy}
+\subsection{Implementation of Linear Bandit environment and action generation function}
+\subsection{Benchmark of Linear Epsilon Greedy}
+\subsection{Performance analysis of different matrix inversion methods for updating the confidence ellipsoid}
+We compare three different methods for updating the confidence ellipsoid matrix between timesteps:
+\begin{itemize}
+  \item classic matrix inversion via \textbf{numpy.linalg.inv} - $\mathcal{O}(d^3)$ time complexity
+  \item approximate matrix inversion via \textbf{numpy.linalg.lstsq} - $\mathcal{O}(d^3)$ time complexity
+  \item Sherman-Morrison formula for computing the inverse of a matrix after rank-1 update - $\mathcal{O}(d^2)$ time complexity
+\end{itemize}
+We use two benchmarks to compare the methods. In the first one we observe the runtimes of agents in a number of environments
+with a fixed \textit{arm-dimension} $d$ and a varying number of arms $K$. In the second benchmark we switch things up and instead fix $d$
+and let $K$ vary. The experiments confirm our intuition that the method based on the Sherman-Morrison formula has the best performance as the
+arm-dimension $d$ increases.
+
+\begin{figure}[h!]
+  \centering
+  % First plot
+  \begin{subfigure}[b]{0.45\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{plots/d_varying_time.png}
+      \label{fig:plot1}
+  \end{subfigure}
+  \hfill
+  % Second plot
+  \begin{subfigure}[b]{0.45\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{plots/K_varying_time.png}
+      \label{fig:plot2}
+  \end{subfigure}
+  \label{fig:combined_plots}
+\end{figure}
 
 
 % =================================================
