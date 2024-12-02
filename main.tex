@@ -109,7 +109,7 @@ arm-dimension $d$ increases.
 \subsection{Implementation of \textbf{LinUCB} and \textbf{LinTS}}
 For the implementation of LinUCB, we are choosing the next arm with the following formula where the first term is an exploitation term and 
 second one is an exploration bonus:
-\[ A_{t+1} = argmax_{a \in \mathbb{A}} a^T \hat \theta_t^{\lambda} + {\lVert a \rVert}_{(B_t^{\lambda})}^{-1} \beta(t,\delta) \]
+\[ A_{t+1} = argmax_{a \in \mathbb{A}} a^T \hat \theta_t^{\lambda} + {\lVert a \rVert}_{{(B_t^{\lambda})}^{-1}} \beta(t,\delta) \]
 This corresponds to choose the next arm with the highest Upper Confidence Bound.
 
 For the implementation of LinTS, we are drawing a possible sample from the posterior distribution before acting optimally in this sampled model:
