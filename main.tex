@@ -11,10 +11,8 @@
 
 \vspace{1ex}
 
-\textsf{\textbf{Students:}} \text{Antani Gospodinov, }, \\
-\textsf{\textbf{Lecturer:}} \text{Claire Vernade}, Contact me on Slack if anything looks weird, or find my email on my \href{www.cvernade.com}{website} 
-
-
+\textsf{\textbf{Students:}} \text{Antani Gospodinov, Martin Jolif}, \\
+\textsf{\textbf{Lecturer:}} \text{Claire Vernade}, Find my email on my \href{www.cvernade.com}{website}
 \vspace{2ex}
 
 \section{Linear Epsilon Greedy}
@@ -109,25 +107,13 @@ arm-dimension $d$ increases.
 
 \section{Problem 2}
 
-\begin{itemize}
-\item Here are the two \textit{get\_action()} methods used for LinUCB and LinTS to select the next arm:
 
-\begin{verbatim}
-def get_action(self, arms):
-  K, _ = arms.shape
-  norm_arms = np.sqrt(np.einsum('ij,jk,ik->i', arms, self.invcov, arms)) #compute np.sqrt(x.T @ A @ x) for each row x of the matrix arms
-  L = 1
-  beta = self.sigma * np.sqrt(2*np.log(1/self.delta) + self.d*np.log(1+self.t*(L/(self.d*self.lambda_reg)))) + np.sqrt(self.lambda_reg)
-  UCB = arms @ self.hat_theta + norm_arms*beta
-  return arms[np.argmax(UCB)]
-\end{verbatim}
-\begin{verbatim}
-def get_action(self, arms):
-  K, _ = arms.shape
-  X = np.random.normal(0, 1, self.d)
-  tilde_theta = self.hat_theta + self.sigma* np.linalg.cholesky(self.invcov) @ X
-  return arms[np.argmax(arms @ tilde_theta)]
-\end{verbatim}
+\item For the implementation of LinUCB, we are choosing the next arm with the following formula where the first term is an exploitation term and second one is an exploration bonus:
+\[ A_{t+1} = \argmax_{a \in \mathbb{A}} a^T \hat \theta_t^{\lambda} + {\lVert a \rVert}_{(B_t^{\lambda})}^{-1} \beta(t,\delta) \]
+This corresponds to choose the next arm with the highest Upper Confidence Bound.
+
+For the implementation of LinTS, we are drawing a possible sample from the posterior distribution before acting optimally in this sampled model:
+\[ \tilde{\theta}_t \sim \mathcal{N}(\hat \theta_t^{\lambda}, \sigma^2{(B_t^{\lambda})}^{-1}) \text{ and, } A_{t+1} = \argmax_{a \in \mathbb{A}} a^T \tilde{\theta}_t\]
 
 
 \item We have $\mathbb{P}_{prior}(\theta_{\star}) \sim \mathcal{N}(\mathbf{0}, \lambda \mathbf{I}_d)$ and we assume that for all $t$, $Y_{t} = \theta_{\star}^TA_t + \epsilon_t$ and $\epsilon_t \sim \mathcal{N}(0, \sigma^2)$.
@@ -309,6 +295,28 @@ Follow the instructions in the notebook and report your results and comments her
 
   def get_means(self):
     return np.dot(self.current_action_set, self.theta)
+\end{verbatim}
+
+
+\section{Implementation of LinUCB and LinTS}
+
+\begin{verbatim}
+def get_action(self, arms):
+  K, _ = arms.shape
+  #compute np.sqrt(x.T @ A @ x) for each row x of the matrix arms
+  norm_arms = np.sqrt(np.einsum('ij,jk,ik->i', arms, self.invcov, arms))
+  L = 1
+  beta = self.sigma * np.sqrt(2*np.log(1/self.delta) + self.d*np.log(1+self.t*(L/(self.d*self.lambda_reg)))) \
+    + np.sqrt(self.lambda_reg)
+  UCB = arms @ self.hat_theta + norm_arms*beta
+  return arms[np.argmax(UCB)]
+\end{verbatim}
+\begin{verbatim}
+def get_action(self, arms):
+  K, _ = arms.shape
+  X = np.random.normal(0, 1, self.d)
+  tilde_theta = self.hat_theta + self.sigma * np.linalg.cholesky(self.invcov) @ X
+  return arms[np.argmax(arms @ tilde_theta)]
 \end{verbatim}
 
 
