@@ -11,31 +11,11 @@
 
 \vspace{1ex}
 
-\textsf{\textbf{Students:}} \text{Your names}, \\
+\textsf{\textbf{Students:}} \text{Antani Gospodinov, }, \\
 \textsf{\textbf{Lecturer:}} \text{Claire Vernade}, Contact me on Slack if anything looks weird, or find my email on my \href{www.cvernade.com}{website} 
 
 
 \vspace{2ex}
-
-Stochastic Linear Bandits are a great way to model contextual sequential decision making problems. We saw them in class and you can read further in the Bandit book \citep{lattimore2020bandit}. In this assignment, your task will be to implement them in order to discuss concretely their performance on simulated environments. The `companion' notebook is attached in this Overleaf. it contains a boiler plate for the experiments and the main questions you will need to answer below. On my website you can find a sample notebook for K-armed bandits (not linear) that may help you get started. 
-
-\textbf{Hard constraint:} Your report can be at most 3 pages + a possible appendix if you decide to also address the Bonus part at the end of the notebook. Thus, if you need to include code snippets or figures, you will have to carefully choose which ones. You are welcome to (and you should!) delete anything I wrote here and below, as long as you re-introduce enough context for your answers, plots and discussions. The clarity of your presentation will be taken into account in the evaluation. Each additional page ($>3$ for the main part, appendix and references do not count) will count -1 on your grade. 
-
-\begin{problem}{Linear Epsilon Greedy (/5)}{}
-\begin{itemize}
-    \item Complete the implementation of the Linear Bandit environment and the action generation function;
-    \item Implement Linear Epsilon Greedy and test it on a simple problem of your choice. Describe your chosen benchmark, report your results and comment. Is it a strong baseline? 
-    \item Discuss the complexity of the matrix inversion step and propose a better, incremental update. Report the gain in runtimes that you observed as a function of $d$.
-\end{itemize}
-\end{problem}
-
-\begin{problem}{LinUCB and LinTS (/5)}{}
-\begin{itemize}
-    \item Implement LinUCB and LinTS. 
-    \item For Thompson Sampling, what is the posterior at time $t$?
-    \item We want to know if there is a better algorithm out of all the ones you implemented. Propose an experiment (describe it) and report your results and conclusions.
-\end{itemize}
-\end{problem}
 
 \section{Linear Epsilon Greedy}
 \subsection{Implementation of Linear Bandit environment and action generation function}
@@ -53,7 +33,49 @@ def ActionsGenerator(K,d,mean=None):
   return res
 \end{verbatim}
 Implementation of the \textbf{LinearBandit} environment is straightforward and can be seen in the appendix.
-\subsection{Benchmark of Linear Epsilon Greedy}
+\subsection{Implementation and Benchmark of Linear Epsilon Greedy}
+We follow the equations given on p. 242 in \cite{lattimore2020bandit} to update our confidence ellipsoid for $\theta$
+and to compute $\hat{\theta}$ at every time step. We try the algorithm on two environments: both of them have $K=50$ and $d=10$,
+but one of them has a fixed action set and the other doesn't. We plot the regrets achieved by agents using different values of $\epsilon$.
+In the fixed action set environment we observe a clear bias-variance tradeoff between the chosen values for $\epsilon$. 
+Interestingly(\emph{but perhaps not surprisingly}), the results look quite different in the environment with a changing action set. A bias-variance
+tradeoff can still be observed, but it is significantly less pronounced. To provide a plausible explanation we also plot the spectral norms for the
+confidence ellipsoid matrices over time, with the idea being that the largest singular value $\sigma_1$ bounds the distance between $\hat{\theta}$
+and $\theta$. It turns out that the graphs of spectral norms are mostly equivalent between different values for $\epsilon$ - and this makes a lot of sense, 
+because with an ever-changing action set we gain the benefits of exploration for free! The small difference in variance can be explained by the fact that
+in the exploitation steps we choose the most collinear to $\theta$ action, but to maximize the obtained information about $\theta$ we should choose the most
+orthogonal action to the span of all actions we've chosen so far - and these two choices are conflicting.
+
+\begin{figure}[H]
+  \centering
+  % Top-left plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/regret_e_greedy_fixed_actions.png}
+  \end{subfigure}
+  % Top-right plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/regret_e_greedy_varying_actions.png}
+  \end{subfigure}
+
+  % Bottom-left plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/spectral_norms_e_greedy.png}
+      \caption{Fixed action set}
+  \end{subfigure}
+  % Bottom-right plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/spectral_norms_e_greedy_varying_actions.png}
+      \caption{Changing action set}
+  \end{subfigure}
+
+  \caption{Benchmark on \textbf{Linear Epsilon Greedy}}
+  \label{fig:2x2_plots}
+\end{figure}
+
 \subsection{Performance analysis of different matrix inversion methods for updating the confidence ellipsoid}
 We compare three different methods for updating the confidence ellipsoid matrix between timesteps:
 \begin{itemize}
@@ -66,7 +88,7 @@ with a fixed \textit{arm-dimension} $d$ and a varying number of arms $K$. In the
 and let $K$ vary. The experiments confirm our intuition that the method based on the Sherman-Morrison formula has the best performance as the
 arm-dimension $d$ increases.
 
-\begin{figure}[h!]
+\begin{figure}[H]
   \centering
   % First plot
   \begin{subfigure}[b]{0.45\textwidth}
@@ -82,7 +104,78 @@ arm-dimension $d$ increases.
       \label{fig:plot2}
   \end{subfigure}
   \label{fig:combined_plots}
+  \caption{Performance analysis of different matrix inversion schemes}
 \end{figure}
+
+\section{Problem 2}
+
+\begin{itemize}
+\item Here are the two \textit{get\_action()} methods used for LinUCB and LinTS to select the next arm:
+
+\begin{verbatim}
+def get_action(self, arms):
+  K, _ = arms.shape
+  norm_arms = np.sqrt(np.einsum('ij,jk,ik->i', arms, self.invcov, arms)) #compute np.sqrt(x.T @ A @ x) for each row x of the matrix arms
+  L = 1
+  beta = self.sigma * np.sqrt(2*np.log(1/self.delta) + self.d*np.log(1+self.t*(L/(self.d*self.lambda_reg)))) + np.sqrt(self.lambda_reg)
+  UCB = arms @ self.hat_theta + norm_arms*beta
+  return arms[np.argmax(UCB)]
+\end{verbatim}
+\begin{verbatim}
+def get_action(self, arms):
+  K, _ = arms.shape
+  X = np.random.normal(0, 1, self.d)
+  tilde_theta = self.hat_theta + self.sigma* np.linalg.cholesky(self.invcov) @ X
+  return arms[np.argmax(arms @ tilde_theta)]
+\end{verbatim}
+
+
+\item We have $\mathbb{P}_{prior}(\theta_{\star}) \sim \mathcal{N}(\mathbf{0}, \lambda \mathbf{I}_d)$ and we assume that for all $t$, $Y_{t} = \theta_{\star}^TA_t + \epsilon_t$ and $\epsilon_t \sim \mathcal{N}(0, \sigma^2)$.
+
+We will reason by induction and suppose that the posterior distribution follows:
+
+\[
+\theta_{\star}|A_1, Y_1, \dots, A_t, Y_t \sim \mathcal{N}(\hat\theta_t^{\lambda}, \sigma^2{(B_t^{\lambda})}^{-1})
+\]
+
+where $B_t^{\lambda} = \lambda \mathbf{I}_d + \sum_{s=1}^t A_s A_s^T$ and $\hat\theta_t^{\lambda} = {(B_t^{\lambda})}^{-1} (\sum_{s=1}^t Y_s A_s)$
+
+\medskip
+We suppose the statement true at time step $t$, and we want to show it at time step $t+1$:
+\begin{align*}
+    \mathbb{P}_{\text{post}}^{t+1}(\theta_{\star}) & \propto \mathcal{L}(\theta_{\star} | A_1, Y_1, \dots A_t, Y_t, A_{t+1}, Y_{t+1}) \mathbb{P}_{prior}(\theta_{\star})\\
+    & \propto \mathbb{P}(A_{t+1}, Y_{t+1} | \theta_{\star}) \mathcal{L}(\theta_{\star} | A_1, Y_1, \dots A_t, Y_t) \mathbb{P}_{prior}(\theta_{\star}) \\
+    & \propto \mathbb{P}(A_{t+1}, Y_{t+1} | \theta_{\star}) \mathbb{P}_{\text{post}}^{t}(\theta_{\star}) \\
+    & \propto e^{-\frac{1}{2\sigma^2} (Y_{t+1} - \theta_{\star}^TA_{t+1})^2} e^{-\frac{1}{2\sigma^2}(\theta_{\star} - \hat\theta_t^{\lambda})^T B_t^{\lambda}(\theta_{\star} - \hat\theta_t^{\lambda}) }\\
+    & \propto e^{-\frac{1}{2\sigma^2}(Y_{t+1}^2 -2\theta_{\star}^TA_{t+1}Y_{t+1} + \theta_{\star}^TA_{t+1}A_{t+1}^T\theta_{\star} + \theta_{\star}^T B_t^{\lambda}\theta_{\star} - 2\theta_{\star}^T B_t^{\lambda}\hat\theta_t^{\lambda})}\\
+    & \propto e^{-\frac{1}{2\sigma^2}(\theta_{\star}^T (B_t^{\lambda} + A_{t+1}A_{t+1}^T) \theta_{\star} -2 \theta_{\star}^T (B_t^{\lambda} + A_{t+1}A_{t+1}^T) (\hat\theta_{t}^{\lambda} + Y_{t+1}A_{t+1})  )} = e^{-\frac{1}{2\sigma^2}(\theta_{\star}^T B_{t+1}^{\lambda}  \theta_{\star} -2 \theta_{\star}^T B_{t+1}^{\lambda} \hat\theta_{t+1}^{\lambda})}\\
+    & \propto e^{-\frac{1}{2\sigma^2}{(\theta_{\star} - \hat\theta_{t+1}^{\lambda})}^T B_{t+1}^{\lambda}  (\theta_{\star} - \hat\theta_{t+1}^{\lambda})}
+\end{align*}
+
+Therefore:
+$\theta_{\star}|A_1, Y_1, \dots, A_{t+1}, Y_{t+1} \sim \mathcal{N}(\hat\theta_{t+1}^{\lambda}, \sigma^2{(B_{t+1}^{\lambda})}^{-1})$
+
+\item Now, we want to compare the different algorithms proposed before and try to figure out which one could be the best.
+To do so, we set our environment to be the classical Linear Bandit environment, we choose the following parameters $K=7, N=50$ (number of Monte Carlo Simulations), $\delta = \frac{1}{T}$ and $\sigma = 1$.
+
+\begin{figure}[h]
+      \centering
+      \begin{subfigure}[b]{0.48\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{plots/output.png}
+          \caption{Arm dimension (d=32)}
+      \end{subfigure}
+      \hfill
+      \begin{subfigure}[b]{0.48\textwidth}
+          \centering
+          \includegraphics[width=\textwidth]{plots/output1.png}
+          \caption{Arm dimension (d=4)}
+      \end{subfigure}
+\end{figure}
+
+Clearly the uniform choice is not the best one as expected, however, for the other algorithm, it's more difficult to say if there is a best one. Indeed, it depends on a lot of different parameters like the arm dimension, the number of arms, or the parameters $\delta$ or $\lambda$. Each algorithm can be better with specific hypothesis.
+
+\end{itemize}
 
 
 
