@@ -85,6 +85,80 @@ arm-dimension $d$ increases.
 \end{figure}
 
 
+
+
+
+% ===========================================
+\section{Problem 2}
+
+\begin{itemize}
+    \item Here are the two \textit{get\_action()} methods used for LinUCB and LinTS to select the next arm:
+
+    \begin{verbatim}
+        def get_action(self, arms):
+            K, _ = arms.shape
+            norm_arms = np.sqrt(np.einsum('ij,jk,ik->i', arms, self.invcov, arms)) #compute np.sqrt(x.T @ A @ x) for each row x of the matrix arms
+            L = 1
+            beta = self.sigma * np.sqrt(2*np.log(1/self.delta) + self.d*np.log(1+self.t*(L/(self.d*self.lambda_reg)))) + np.sqrt(self.lambda_reg)
+            UCB = arms @ self.hat_theta + norm_arms*beta
+            return arms[np.argmax(UCB)]
+    \end{verbatim}
+    \begin{verbatim}
+        def get_action(self, arms):
+            K, _ = arms.shape
+            X = np.random.normal(0, 1, self.d)
+            tilde_theta = self.hat_theta + self.sigma* np.linalg.cholesky(self.invcov) @ X
+            return arms[np.argmax(arms @ tilde_theta)]
+    \end{verbatim}
+
+
+    \item We have $\mathbb{P}_{prior}(\theta_{\star}) \sim \mathcal{N}(\mathbf{0}, \lambda \mathbf{I}_d)$ and we assume that for all $t$, $Y_{t} = \theta_{\star}^TA_t + \epsilon_t$ and $\epsilon_t \sim \mathcal{N}(0, \sigma^2)$.
+
+    We will reason by induction and suppose that the posterior distribution follows:
+
+    \[
+    \theta_{\star}|A_1, Y_1, \dots, A_t, Y_t \sim \mathcal{N}(\hat\theta_t^{\lambda}, \sigma^2{(B_t^{\lambda})}^{-1})
+    \]
+
+    where $B_t^{\lambda} = \lambda \mathbf{I}_d + \sum_{s=1}^t A_s A_s^T$ and $\hat\theta_t^{\lambda} = {(B_t^{\lambda})}^{-1} (\sum_{s=1}^t Y_s A_s)$
+
+    \medskip
+    We suppose the statement true at time step $t$, and we want to show it at time step $t+1$:
+    \begin{align*}
+        \mathbb{P}_{\text{post}}^{t+1}(\theta_{\star}) & \propto \mathcal{L}(\theta_{\star} | A_1, Y_1, \dots A_t, Y_t, A_{t+1}, Y_{t+1}) \mathbb{P}_{prior}(\theta_{\star})\\
+        & \propto \mathbb{P}(A_{t+1}, Y_{t+1} | \theta_{\star}) \mathcal{L}(\theta_{\star} | A_1, Y_1, \dots A_t, Y_t) \mathbb{P}_{prior}(\theta_{\star}) \\
+        & \propto \mathbb{P}(A_{t+1}, Y_{t+1} | \theta_{\star}) \mathbb{P}_{\text{post}}^{t}(\theta_{\star}) \\
+        & \propto e^{-\frac{1}{2\sigma^2} (Y_{t+1} - \theta_{\star}^TA_{t+1})^2} e^{-\frac{1}{2\sigma^2}(\theta_{\star} - \hat\theta_t^{\lambda})^T B_t^{\lambda}(\theta_{\star} - \hat\theta_t^{\lambda}) }\\
+        & \propto e^{-\frac{1}{2\sigma^2}(Y_{t+1}^2 -2\theta_{\star}^TA_{t+1}Y_{t+1} + \theta_{\star}^TA_{t+1}A_{t+1}^T\theta_{\star} + \theta_{\star}^T B_t^{\lambda}\theta_{\star} - 2\theta_{\star}^T B_t^{\lambda}\hat\theta_t^{\lambda})}\\
+        & \propto e^{-\frac{1}{2\sigma^2}(\theta_{\star}^T (B_t^{\lambda} + A_{t+1}A_{t+1}^T) \theta_{\star} -2 \theta_{\star}^T (B_t^{\lambda} + A_{t+1}A_{t+1}^T) (\hat\theta_{t}^{\lambda} + Y_{t+1}A_{t+1})  )} = e^{-\frac{1}{2\sigma^2}(\theta_{\star}^T B_{t+1}^{\lambda}  \theta_{\star} -2 \theta_{\star}^T B_{t+1}^{\lambda} \hat\theta_{t+1}^{\lambda})}\\
+        & \propto e^{-\frac{1}{2\sigma^2}{(\theta_{\star} - \hat\theta_{t+1}^{\lambda})}^T B_{t+1}^{\lambda}  (\theta_{\star} - \hat\theta_{t+1}^{\lambda})}
+    \end{align*}
+
+    Therefore:
+    $\theta_{\star}|A_1, Y_1, \dots, A_{t+1}, Y_{t+1} \sim \mathcal{N}(\hat\theta_{t+1}^{\lambda}, \sigma^2{(B_{t+1}^{\lambda})}^{-1})$
+
+    \item Now, we want to compare the different algorithms proposed before and try to figure out which one could be the best.
+    To do so, we set our environment to be the classical Linear Bandit environment, we choose the following parameters $K=7, N=50$ (number of Monte Carlo Simulations), $\delta = \frac{1}{T}$ and $\sigma = 1$.
+
+    \begin{figure}[h]
+         \centering
+         \begin{subfigure}[b]{0.48\textwidth}
+             \centering
+             \includegraphics[width=\textwidth]{output.png}
+             \caption{Arm dimension (d=32)}
+         \end{subfigure}
+         \hfill
+         \begin{subfigure}[b]{0.48\textwidth}
+             \centering
+             \includegraphics[width=\textwidth]{output1.png}
+             \caption{Arm dimension (d=4)}
+         \end{subfigure}
+    \end{figure}
+
+    Clearly the uniform choice is not the best one as expected, however, for the other algorithm, it's more difficult to say if there is a best one. Indeed, it depends on a lot of different parameters like the arm dimension, the number of arms, or the parameters $\delta$ or $\lambda$. Each algorithm can be better with specific hypothesis.
+
+\end{itemize}
+
 % =================================================
 
 % \newpage
