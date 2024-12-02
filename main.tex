@@ -53,7 +53,49 @@ def ActionsGenerator(K,d,mean=None):
   return res
 \end{verbatim}
 Implementation of the \textbf{LinearBandit} environment is straightforward and can be seen in the appendix.
-\subsection{Benchmark of Linear Epsilon Greedy}
+\subsection{Implementation and Benchmark of Linear Epsilon Greedy}
+We follow the equations given on p. 242 in \cite{lattimore2020bandit} to update our confidence ellipsoid for $\theta$
+and to compute $\hat{\theta}$ at every time step. We try the algorithm on two environments: both of them have $K=50$ and $d=10$,
+but one of them has a fixed action set and the other doesn't. We plot the regrets achieved by agents using different values of $\epsilon$.
+In the fixed action set environment we observe a clear bias-variance tradeoff between the chosen values for $\epsilon$. 
+Interestingly(\emph{but perhaps not surprisingly}), the results look quite different in the environment with a changing action set. A bias-variance
+tradeoff can still be observed, but it is significantly less pronounced. To provide a plausible explanation we also plot the spectral norms for the
+confidence ellipsoid matrices over time, with the idea being that the largest singular value $\sigma_1$ bounds the distance between $\hat{\theta}$
+and $\theta$. It turns out that the graphs of spectral norms are mostly equivalent between different values for $\epsilon$ - and this makes a lot of sense, 
+because with an ever-changing action set we gain the benefits of exploration for free! The small difference in variance can be explained by the fact that
+in the exploitation steps we choose the most collinear to $\theta$ action, but to maximize the obtained information about $\theta$ we should choose the most
+orthogonal action to the span of all actions we've chosen so far - and these two choices are conflicting.
+
+\begin{figure}[H]
+  \centering
+  % Top-left plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/regret_e_greedy_fixed_actions.png}
+  \end{subfigure}
+  % Top-right plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/regret_e_greedy_varying_actions.png}
+  \end{subfigure}
+
+  % Bottom-left plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/spectral_norms_e_greedy.png}
+      \caption{Fixed action set}
+  \end{subfigure}
+  % Bottom-right plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/spectral_norms_e_greedy_varying_actions.png}
+      \caption{Changing action set}
+  \end{subfigure}
+
+  \caption{Benchmark on \textbf{Linear Epsilon Greedy}}
+  \label{fig:2x2_plots}
+\end{figure}
+
 \subsection{Performance analysis of different matrix inversion methods for updating the confidence ellipsoid}
 We compare three different methods for updating the confidence ellipsoid matrix between timesteps:
 \begin{itemize}
@@ -82,6 +124,7 @@ arm-dimension $d$ increases.
       \label{fig:plot2}
   \end{subfigure}
   \label{fig:combined_plots}
+  \caption{Performance analysis of different matrix inversion schemes}
 \end{figure}
 
 
