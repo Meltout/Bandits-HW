@@ -42,37 +42,8 @@ confidence ellipsoid matrices over time, with the idea being that the largest si
 and $\theta$. It turns out that the graphs of spectral norms are mostly equivalent between different values for $\epsilon$ - and this makes a lot of sense, 
 because with an ever-changing action set we gain the benefits of exploration for free! The small difference in variance can be explained by the fact that
 in the exploitation steps we choose the most collinear to $\theta$ action, but to maximize the obtained information about $\theta$ we should choose the most
-orthogonal action to the span of all actions we've chosen so far - and these two choices are conflicting.
-
-\begin{figure}[H]
-  \centering
-  % Top-left plot
-  \begin{subfigure}{0.45\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{plots/regret_e_greedy_fixed_actions.png}
-  \end{subfigure}
-  % Top-right plot
-  \begin{subfigure}{0.45\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{plots/regret_e_greedy_varying_actions.png}
-  \end{subfigure}
-
-  % Bottom-left plot
-  \begin{subfigure}{0.45\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{plots/spectral_norms_e_greedy.png}
-      \caption{Fixed action set}
-  \end{subfigure}
-  % Bottom-right plot
-  \begin{subfigure}{0.45\textwidth}
-      \centering
-      \includegraphics[width=\linewidth]{plots/spectral_norms_e_greedy_varying_actions.png}
-      \caption{Changing action set}
-  \end{subfigure}
-
-  \caption{Benchmark on \textbf{Linear Epsilon Greedy}}
-  \label{fig:2x2_plots}
-\end{figure}
+orthogonal action to the span of all actions we've chosen so far - and these two choices are conflicting. You can find the results of the experiment in the
+appendix.
 
 \subsection{Performance analysis of different matrix inversion methods for updating the confidence ellipsoid}
 We compare three different methods for updating the confidence ellipsoid matrix between timesteps:
@@ -86,7 +57,7 @@ with a fixed \textit{arm-dimension} $d$ and a varying number of arms $K$. In the
 and let $K$ vary. The experiments confirm our intuition that the method based on the Sherman-Morrison formula has the best performance as the
 arm-dimension $d$ increases.
 
-\begin{figure}[H]
+\begin{figure}[h!]
   \centering
   % First plot
   \begin{subfigure}[b]{0.45\textwidth}
@@ -107,16 +78,20 @@ arm-dimension $d$ increases.
 
 \section{Problem 2}
 
-
-\item For the implementation of LinUCB, we are choosing the next arm with the following formula where the first term is an exploitation term and second one is an exploration bonus:
-\[ A_{t+1} = \argmax_{a \in \mathbb{A}} a^T \hat \theta_t^{\lambda} + {\lVert a \rVert}_{(B_t^{\lambda})}^{-1} \beta(t,\delta) \]
+\subsection{Implementation of \textbf{LinUCB} and \textbf{LinTS}}
+For the implementation of LinUCB, we are choosing the next arm with the following formula where the first term is an exploitation term and 
+second one is an exploration bonus:
+\[ A_{t+1} = argmax_{a \in \mathbb{A}} a^T \hat \theta_t^{\lambda} + {\lVert a \rVert}_{(B_t^{\lambda})}^{-1} \beta(t,\delta) \]
 This corresponds to choose the next arm with the highest Upper Confidence Bound.
 
 For the implementation of LinTS, we are drawing a possible sample from the posterior distribution before acting optimally in this sampled model:
-\[ \tilde{\theta}_t \sim \mathcal{N}(\hat \theta_t^{\lambda}, \sigma^2{(B_t^{\lambda})}^{-1}) \text{ and, } A_{t+1} = \argmax_{a \in \mathbb{A}} a^T \tilde{\theta}_t\]
+\[ \tilde{\theta}_t \sim \mathcal{N}(\hat \theta_t^{\lambda}, 
+   \sigma^2{(B_t^{\lambda})}^{-1}) \text{ and, } A_{t+1} = argmax_{a \in \mathbb{A}} a^T \tilde{\theta}_t\]
 
 
-\item We have $\mathbb{P}_{prior}(\theta_{\star}) \sim \mathcal{N}(\mathbf{0}, \lambda \mathbf{I}_d)$ and we assume that for all $t$, $Y_{t} = \theta_{\star}^TA_t + \epsilon_t$ and $\epsilon_t \sim \mathcal{N}(0, \sigma^2)$.
+\newgeometry{top=0.7cm}
+\subsection{Thompson sampling posterior at time \emph{t}}
+We have $\mathbb{P}_{prior}(\theta_{\star}) \sim \mathcal{N}(\mathbf{0}, \lambda \mathbf{I}_d)$ and we assume that for all $t$, $Y_{t} = \theta_{\star}^TA_t + \epsilon_t$ and $\epsilon_t \sim \mathcal{N}(0, \sigma^2)$.
 
 We will reason by induction and suppose that the posterior distribution follows:
 
@@ -127,7 +102,7 @@ We will reason by induction and suppose that the posterior distribution follows:
 where $B_t^{\lambda} = \lambda \mathbf{I}_d + \sum_{s=1}^t A_s A_s^T$ and $\hat\theta_t^{\lambda} = {(B_t^{\lambda})}^{-1} (\sum_{s=1}^t Y_s A_s)$
 
 \medskip
-We suppose the statement true at time step $t$, and we want to show it at time step $t+1$:
+We suppose the statement is true at time step $t$ and we want to show it holds at time step $t+1$:
 \begin{align*}
     \mathbb{P}_{\text{post}}^{t+1}(\theta_{\star}) & \propto \mathcal{L}(\theta_{\star} | A_1, Y_1, \dots A_t, Y_t, A_{t+1}, Y_{t+1}) \mathbb{P}_{prior}(\theta_{\star})\\
     & \propto \mathbb{P}(A_{t+1}, Y_{t+1} | \theta_{\star}) \mathcal{L}(\theta_{\star} | A_1, Y_1, \dots A_t, Y_t) \mathbb{P}_{prior}(\theta_{\star}) \\
@@ -141,7 +116,8 @@ We suppose the statement true at time step $t$, and we want to show it at time s
 Therefore:
 $\theta_{\star}|A_1, Y_1, \dots, A_{t+1}, Y_{t+1} \sim \mathcal{N}(\hat\theta_{t+1}^{\lambda}, \sigma^2{(B_{t+1}^{\lambda})}^{-1})$
 
-\item Now, we want to compare the different algorithms proposed before and try to figure out which one could be the best.
+\subsection{Comparing different algorithms}
+Now, we want to compare the different algorithms proposed before and try to figure out which one could be the best.
 To do so, we set our environment to be the classical Linear Bandit environment, we choose the following parameters $K=7, N=50$ (number of Monte Carlo Simulations), $\delta = \frac{1}{T}$ and $\sigma = 1$.
 
 \begin{figure}[h]
@@ -159,84 +135,11 @@ To do so, we set our environment to be the classical Linear Bandit environment, 
       \end{subfigure}
 \end{figure}
 
-Clearly the uniform choice is not the best one as expected, however, for the other algorithm, it's more difficult to say if there is a best one. Indeed, it depends on a lot of different parameters like the arm dimension, the number of arms, or the parameters $\delta$ or $\lambda$. Each algorithm can be better with specific hypothesis.
-
-\end{itemize}
-
-
+Clearly the uniform choice is not the best one as expected, however, for the other algorithm, it's more difficult to say if there is a best one. 
+Indeed, it depends on a lot of different parameters like the arm dimension, the number of arms, or the parameters $\delta$ or $\lambda$.
+Each algorithm can be better with specific hypothesis.
 
 
-
-% ===========================================
-\section{Problem 2}
-
-\begin{itemize}
-    \item Here are the two \textit{get\_action()} methods used for LinUCB and LinTS to select the next arm:
-
-    \begin{verbatim}
-        def get_action(self, arms):
-            K, _ = arms.shape
-            norm_arms = np.sqrt(np.einsum('ij,jk,ik->i', arms, self.invcov, arms)) #compute np.sqrt(x.T @ A @ x) for each row x of the matrix arms
-            L = 1
-            beta = self.sigma * np.sqrt(2*np.log(1/self.delta) + self.d*np.log(1+self.t*(L/(self.d*self.lambda_reg)))) + np.sqrt(self.lambda_reg)
-            UCB = arms @ self.hat_theta + norm_arms*beta
-            return arms[np.argmax(UCB)]
-    \end{verbatim}
-    \begin{verbatim}
-        def get_action(self, arms):
-            K, _ = arms.shape
-            X = np.random.normal(0, 1, self.d)
-            tilde_theta = self.hat_theta + self.sigma* np.linalg.cholesky(self.invcov) @ X
-            return arms[np.argmax(arms @ tilde_theta)]
-    \end{verbatim}
-
-
-    \item We have $\mathbb{P}_{prior}(\theta_{\star}) \sim \mathcal{N}(\mathbf{0}, \lambda \mathbf{I}_d)$ and we assume that for all $t$, $Y_{t} = \theta_{\star}^TA_t + \epsilon_t$ and $\epsilon_t \sim \mathcal{N}(0, \sigma^2)$.
-
-    We will reason by induction and suppose that the posterior distribution follows:
-
-    \[
-    \theta_{\star}|A_1, Y_1, \dots, A_t, Y_t \sim \mathcal{N}(\hat\theta_t^{\lambda}, \sigma^2{(B_t^{\lambda})}^{-1})
-    \]
-
-    where $B_t^{\lambda} = \lambda \mathbf{I}_d + \sum_{s=1}^t A_s A_s^T$ and $\hat\theta_t^{\lambda} = {(B_t^{\lambda})}^{-1} (\sum_{s=1}^t Y_s A_s)$
-
-    \medskip
-    We suppose the statement true at time step $t$, and we want to show it at time step $t+1$:
-    \begin{align*}
-        \mathbb{P}_{\text{post}}^{t+1}(\theta_{\star}) & \propto \mathcal{L}(\theta_{\star} | A_1, Y_1, \dots A_t, Y_t, A_{t+1}, Y_{t+1}) \mathbb{P}_{prior}(\theta_{\star})\\
-        & \propto \mathbb{P}(A_{t+1}, Y_{t+1} | \theta_{\star}) \mathcal{L}(\theta_{\star} | A_1, Y_1, \dots A_t, Y_t) \mathbb{P}_{prior}(\theta_{\star}) \\
-        & \propto \mathbb{P}(A_{t+1}, Y_{t+1} | \theta_{\star}) \mathbb{P}_{\text{post}}^{t}(\theta_{\star}) \\
-        & \propto e^{-\frac{1}{2\sigma^2} (Y_{t+1} - \theta_{\star}^TA_{t+1})^2} e^{-\frac{1}{2\sigma^2}(\theta_{\star} - \hat\theta_t^{\lambda})^T B_t^{\lambda}(\theta_{\star} - \hat\theta_t^{\lambda}) }\\
-        & \propto e^{-\frac{1}{2\sigma^2}(Y_{t+1}^2 -2\theta_{\star}^TA_{t+1}Y_{t+1} + \theta_{\star}^TA_{t+1}A_{t+1}^T\theta_{\star} + \theta_{\star}^T B_t^{\lambda}\theta_{\star} - 2\theta_{\star}^T B_t^{\lambda}\hat\theta_t^{\lambda})}\\
-        & \propto e^{-\frac{1}{2\sigma^2}(\theta_{\star}^T (B_t^{\lambda} + A_{t+1}A_{t+1}^T) \theta_{\star} -2 \theta_{\star}^T (B_t^{\lambda} + A_{t+1}A_{t+1}^T) (\hat\theta_{t}^{\lambda} + Y_{t+1}A_{t+1})  )} = e^{-\frac{1}{2\sigma^2}(\theta_{\star}^T B_{t+1}^{\lambda}  \theta_{\star} -2 \theta_{\star}^T B_{t+1}^{\lambda} \hat\theta_{t+1}^{\lambda})}\\
-        & \propto e^{-\frac{1}{2\sigma^2}{(\theta_{\star} - \hat\theta_{t+1}^{\lambda})}^T B_{t+1}^{\lambda}  (\theta_{\star} - \hat\theta_{t+1}^{\lambda})}
-    \end{align*}
-
-    Therefore:
-    $\theta_{\star}|A_1, Y_1, \dots, A_{t+1}, Y_{t+1} \sim \mathcal{N}(\hat\theta_{t+1}^{\lambda}, \sigma^2{(B_{t+1}^{\lambda})}^{-1})$
-
-    \item Now, we want to compare the different algorithms proposed before and try to figure out which one could be the best.
-    To do so, we set our environment to be the classical Linear Bandit environment, we choose the following parameters $K=7, N=50$ (number of Monte Carlo Simulations), $\delta = \frac{1}{T}$ and $\sigma = 1$.
-
-    \begin{figure}[h]
-         \centering
-         \begin{subfigure}[b]{0.48\textwidth}
-             \centering
-             \includegraphics[width=\textwidth]{output.png}
-             \caption{Arm dimension (d=32)}
-         \end{subfigure}
-         \hfill
-         \begin{subfigure}[b]{0.48\textwidth}
-             \centering
-             \includegraphics[width=\textwidth]{output1.png}
-             \caption{Arm dimension (d=4)}
-         \end{subfigure}
-    \end{figure}
-
-    Clearly the uniform choice is not the best one as expected, however, for the other algorithm, it's more difficult to say if there is a best one. Indeed, it depends on a lot of different parameters like the arm dimension, the number of arms, or the parameters $\delta$ or $\lambda$. Each algorithm can be better with specific hypothesis.
-
-\end{itemize}
 
 % =================================================
 
@@ -258,43 +161,74 @@ This last part allows you to study how certain actions sets can be hard for LinU
 Follow the instructions in the notebook and report your results and comments here. 
 \emph{This part can count up to (+2) points, meaning that the maximal grade is (12/10) and could compensate missed points on the Quiz or on the project. }
 
+\section{Benchmark of \textbf{Linear Epsilon Greedy}}
+\begin{figure}[H]
+  \centering
+  % Top-left plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/regret_e_greedy_fixed_actions.png}
+  \end{subfigure}
+  % Top-right plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/regret_e_greedy_varying_actions.png}
+  \end{subfigure}
+  % Bottom-left plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/spectral_norms_e_greedy.png}
+      \caption{Fixed action set}
+  \end{subfigure}
+  % Bottom-right plot
+  \begin{subfigure}{0.45\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{plots/spectral_norms_e_greedy_varying_actions.png}
+      \caption{Changing action set}
+  \end{subfigure}
+
+  \caption{Benchmark on \textbf{Linear Epsilon Greedy}}
+  \label{fig:2x2_plots}
+\end{figure}
+
+
 \section{Implementation of \textbf{Linear Bandit} environment}
 \begin{verbatim}
-  class LinearBandit:
-  def __init__(self, theta, K, var=1., fixed_actions=None):
-    """
-    theta: d-dimensional vector (bounded) representing the hidden parameter
-    K: number of actions per round (random action vectors generated each time)
-    pb_type: string in 'fixed', 'iid', 'nsr' (please ignore NotSoRandom)
-    """
-    self.d = np.size(theta)
-    self.theta = theta
-    self.K = K
-    self.var = var
-    self.fixed_actions = fixed_actions
-    self.current_action_set = self.get_action_set()
+class LinearBandit:
+def __init__(self, theta, K, var=1., fixed_actions=None):
+  """
+  theta: d-dimensional vector (bounded) representing the hidden parameter
+  K: number of actions per round (random action vectors generated each time)
+  pb_type: string in 'fixed', 'iid', 'nsr' (please ignore NotSoRandom)
+  """
+  self.d = np.size(theta)
+  self.theta = theta
+  self.K = K
+  self.var = var
+  self.fixed_actions = fixed_actions
+  self.current_action_set = self.get_action_set()
 
-  def get_action_set(self):
-    """
-    Generates a set of vectors in dimension self.d. Use your ActionsGenerator
-    Alternatively, the set of actions is fixed a priori (given as input).
-    Implement a condition to return the fixed set when one is given
-    """
-    if self.fixed_actions is not None:
-      return self.fixed_actions
-    else:
-      self.current_action_set = ActionsGenerator(self.K, self.d)
-      return self.current_action_set
+def get_action_set(self):
+  """
+  Generates a set of vectors in dimension self.d. Use your ActionsGenerator
+  Alternatively, the set of actions is fixed a priori (given as input).
+  Implement a condition to return the fixed set when one is given
+  """
+  if self.fixed_actions is not None:
+    return self.fixed_actions
+  else:
+    self.current_action_set = ActionsGenerator(self.K, self.d)
+    return self.current_action_set
 
-  def get_reward(self, action):
-    """ sample reward given action and the model of this bandit environment
-    action: d-dimensional vector (action chosen by the learner)
-    """
-    mean = np.dot(action, self.theta)
-    return np.random.normal(mean, scale=self.var)
+def get_reward(self, action):
+  """ sample reward given action and the model of this bandit environment
+  action: d-dimensional vector (action chosen by the learner)
+  """
+  mean = np.dot(action, self.theta)
+  return np.random.normal(mean, scale=self.var)
 
-  def get_means(self):
-    return np.dot(self.current_action_set, self.theta)
+def get_means(self):
+  return np.dot(self.current_action_set, self.theta)
 \end{verbatim}
 
 
@@ -306,8 +240,9 @@ def get_action(self, arms):
   #compute np.sqrt(x.T @ A @ x) for each row x of the matrix arms
   norm_arms = np.sqrt(np.einsum('ij,jk,ik->i', arms, self.invcov, arms))
   L = 1
-  beta = self.sigma * np.sqrt(2*np.log(1/self.delta) + self.d*np.log(1+self.t*(L/(self.d*self.lambda_reg)))) \
-    + np.sqrt(self.lambda_reg)
+  beta = self.sigma * np.sqrt(2*np.log(1/self.delta) \+ 
+    self.d*np.log(1+self.t*(L/(self.d*self.lambda_reg)))) \+
+    np.sqrt(self.lambda_reg)
   UCB = arms @ self.hat_theta + norm_arms*beta
   return arms[np.argmax(UCB)]
 \end{verbatim}
